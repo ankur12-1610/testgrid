@@ -68,7 +68,7 @@ export class DashboardSummary extends LitElement {
     this.tabSummariesInfo = [];
     try {
       const response = await fetch(
-        `http://localhost:8080/api/v1/dashboards/${this.input.value}/tab-summaries`
+        `http://testgrid-data.k8s.io/api/v1/dashboards/${this.input.value}/tab-summaries`
       );
       if (!response.ok) {
         throw new Error(`HTTP error: ${response.status}`);

@@ -17,6 +17,9 @@
     "start": "tsc && concurrently -k -r \"tsc --watch --preserveWatchOutput\" \"wds\""
   },
   "dependencies": {
+    "@babel/core": "^7.21.3",
+    "@babel/preset-typescript": "^7.21.0",
+    "@material-tailwind/html": "^2.0.0",
     "@material/mwc-button": "^0.27.0",
     "@material/mwc-list": "^0.27.0",
     "@protobuf-ts/plugin": "^2.8.3",

@@ -4,6 +4,8 @@ import html from '@web/rollup-plugin-html';
 import { importMetaAssets } from '@web/rollup-plugin-import-meta-assets';
 import { terser } from '@rollup/plugin-terser';
 import { generateSW } from 'rollup-plugin-workbox';
+import autoprefixer from 'autoprefixer';
+import postcss from 'rollup-plugin-postcss';
 import path from 'path';
 
 export default {
@@ -26,6 +28,13 @@ export default {
     }),
     /** Resolve bare module imports */
     nodeResolve(),
+    /** Compile CSS to a lower language target */
+    postcss({
+      plugins: [autoprefixer()],
+      sourceMap: true,
+      extract: true,
+      minimize: true
+    }),
     /** Minify JS */
     terser(),
     /** Bundle assets references via import.meta.url */

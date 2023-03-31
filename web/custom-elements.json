@@ -17,11 +17,21 @@
               "type": {
                 "text": "String"
               },
-              "default": "'http://localhost:8080'"
+              "default": "'testgrid-data.k8s.io'"
             },
             {
               "kind": "method",
               "name": "getDashboards",
+              "privacy": "public",
+              "return": {
+                "type": {
+                  "text": "Array<String>"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "getDashboardGroups",
               "privacy": "public",
               "return": {
                 "type": {
@@ -71,8 +81,24 @@
               "attribute": "dashboards"
             },
             {
+              "kind": "field",
+              "name": "dashboardGroups",
+              "type": {
+                "text": "Array<string>"
+              },
+              "default": "[]"
+            },
+            {
               "kind": "method",
               "name": "getDashboards"
+            },
+            {
+              "kind": "method",
+              "name": "getDashboardGroups"
+            },
+            {
+              "kind": "method",
+              "name": "callAPI"
             }
           ],
           "attributes": [
@@ -173,6 +199,33 @@
           "declaration": {
             "name": "DashboardSummary",
             "module": "src/dashboard-summary.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/seperate.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/styles.ts",
+      "declarations": [
+        {
+          "kind": "variable",
+          "name": "styles",
+          "default": "css`\n    @tailwind base;\n    @tailwind components;\n    @tailwind utilities;\n    `"
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "styles",
+          "declaration": {
+            "name": "styles",
+            "module": "src/styles.ts"
           }
         }
       ]
@@ -389,12 +442,16 @@
               "name": "getDashboards"
             },
             {
+              "kind": "method",
+              "name": "getDashboardGroups"
+            },
+            {
               "kind": "field",
               "name": "host",
               "type": {
                 "text": "string"
               },
-              "default": "'http://localhost:8080'"
+              "default": "'testgrid-data.k8s.io'"
             }
           ]
         }
@@ -417,7 +474,7 @@
         {
           "kind": "variable",
           "name": "TestgridIndex",
-          "default": "class TestgridIndex extends LitElement {\n    constructor() {\n        super(...arguments);\n        this.title = 'My app';\n        this.dashboards = [];\n    }\n    // TODO(chases2): inject an APIClient object so we can inject it into tests/storybook later\n    render() {\n        return html `\n      <mwc-list>\n        ${map(this.dashboards, (dash, index) => {\n            if (index !== 0) {\n                return html `\n              <li divider role=\"separator\"></li>\n              <mwc-list-item>${dash}</mwc-list-item>\n            `;\n            }\n            return html `<mwc-list-item>${dash}</mwc-list-item>`;\n        })}\n      </mwc-list>\n      <mwc-button raised @click=\"${this.getDashboards}\">Call API</mwc-button>\n    `;\n    }\n    getDashboards() {\n        this.dashboards = ['Loading...'];\n        fetch('http://localhost:8080/api/v1/dashboards').then(async (response) => {\n            const resp = ListDashboardResponse.fromJson(await response.json());\n            this.dashboards = [];\n            resp.dashboards.forEach(db => {\n                this.dashboards.push(db.name);\n            });\n        });\n    }\n}"
+          "default": "class TestgridIndex extends LitElement {\n    constructor() {\n        super(...arguments);\n        this.title = 'My app';\n        this.dashboards = [];\n        this.dashboardGroups = [];\n    }\n    // TODO(chases2): inject an APIClient object so we can inject it into tests/storybook later\n    render() {\n        return html `\n      <mwc-button class=\"button\" raised @click=\"${this.callAPI}\">Call API</mwc-button>\n\n    <!-- loading dashboards -->\n    <div class=\"flex-container\">\n      <div>\n        <mwc-list class=\"column\">\n          ${map(this.dashboards, (dash, index) => {\n            if (index !== 0) {\n                return html `\n              <mwc-list-item class=\"card dashboard\">\n                  <div class=\"container\">\n                    <p>${dash}</p>\n                  </div>\n              </mwc-list-item>\n            `;\n            }\n            return html `<mwc-list-item class=\"card dashboard\">\n                  <div class=\"container\">\n                    <p>${dash}</p>\n                </div>\n          </mwc-list-item>`;\n        })}\n        </mwc-list>\n      </div>\n\n      <!-- loading dashboard groups -->\n      <mwc-list class=\"column\">\n        ${map(this.dashboardGroups, (dash, index) => {\n            if (index !== 0) {\n                return html `\n              <mwc-list-item class=\"card dashboard-group\">\n                  <div class=\"container\">\n                    <p>${dash}</p>\n                  </div>\n              </mwc-list-item>\n            `;\n            }\n            return html `<mwc-list-item class=\"card dashboard-group\">\n                  <div class=\"container\">\n                    <p>${dash}</p>\n                </div>\n          </mwc-list-item>`;\n        })}\n      </mwc-list>\n      </div>\n    </div>\n    `;\n    }\n    getDashboards() {\n        this.dashboards = ['Loading...'];\n        fetch('http://testgrid-data.k8s.io/api/v1/dashboards').then(async (response) => {\n            const resp = ListDashboardResponse.fromJson(await response.json());\n            this.dashboards = [];\n            resp.dashboards.forEach(db => {\n                this.dashboards.push(db.name);\n            });\n        });\n    }\n    getDashboardGroups() {\n        this.dashboardGroups = ['Loading...'];\n        fetch('http://testgrid-data.k8s.io/api/v1/dashboard-groups').then(async (response) => {\n            const resp = ListDashboardGroupResponse.fromJson(await response.json());\n            this.dashboardGroups = [];\n            resp.dashboardGroups.forEach(db => {\n                this.dashboardGroups.push(db.name);\n            });\n        });\n    }\n    // call both of these at same time\n    callAPI() {\n        this.getDashboards();\n        this.getDashboardGroups();\n    }\n}"
         }
       ],
       "exports": [
@@ -438,7 +495,7 @@
         {
           "kind": "variable",
           "name": "DashboardSummary",
-          "default": "class DashboardSummary extends LitElement {\n    constructor() {\n        super(...arguments);\n        this.tabSummariesInfo = [];\n    }\n    render() {\n        return html `\n      ${map(this.tabSummariesInfo, (ts) => html `<tab-summary .info=${ts}></tab-summary>`)}\n      <input id=\"dashboard-name-input\" label=\"Dashboard name\" />\n      <mwc-button raised @click=\"${this.getTabSummaries}\">Fetch</mwc-button>\n    `;\n    }\n    async getTabSummaries() {\n        this.tabSummariesInfo = [];\n        try {\n            const response = await fetch(`http://localhost:8080/api/v1/dashboards/${this.input.value}/tab-summaries`);\n            if (!response.ok) {\n                throw new Error(`HTTP error: ${response.status}`);\n            }\n            const data = ListTabSummariesResponse.fromJson(await response.json());\n            data.tabSummaries.forEach(ts => {\n                const si = convertResponse(ts);\n                this.tabSummariesInfo = [...this.tabSummariesInfo, si];\n            });\n        }\n        catch (error) {\n            console.error(`Could not get dashboard summaries: ${error}`);\n        }\n    }\n}"
+          "default": "class DashboardSummary extends LitElement {\n    constructor() {\n        super(...arguments);\n        this.tabSummariesInfo = [];\n    }\n    render() {\n        return html `\n      ${map(this.tabSummariesInfo, (ts) => html `<tab-summary .info=${ts}></tab-summary>`)}\n      <input id=\"dashboard-name-input\" label=\"Dashboard name\" />\n      <mwc-button raised @click=\"${this.getTabSummaries}\">Fetch</mwc-button>\n    `;\n    }\n    async getTabSummaries() {\n        this.tabSummariesInfo = [];\n        try {\n            const response = await fetch(`http://testgrid-data.k8s.io/api/v1/dashboards/${this.input.value}/tab-summaries`);\n            if (!response.ok) {\n                throw new Error(`HTTP error: ${response.status}`);\n            }\n            const data = ListTabSummariesResponse.fromJson(await response.json());\n            data.tabSummaries.forEach(ts => {\n                const si = convertResponse(ts);\n                this.tabSummariesInfo = [...this.tabSummariesInfo, si];\n            });\n        }\n        catch (error) {\n            console.error(`Could not get dashboard summaries: ${error}`);\n        }\n    }\n}"
         }
       ],
       "exports": [
@@ -448,6 +505,33 @@
           "declaration": {
             "name": "DashboardSummary",
             "module": "out-tsc/src/dashboard-summary.js"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "out-tsc/src/seperate.js",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "out-tsc/src/styles.js",
+      "declarations": [
+        {
+          "kind": "variable",
+          "name": "styles",
+          "default": "css `\n    @tailwind base;\n    @tailwind components;\n    @tailwind utilities;\n    `"
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "styles",
+          "declaration": {
+            "name": "styles",
+            "module": "out-tsc/src/styles.js"
           }
         }
       ]
