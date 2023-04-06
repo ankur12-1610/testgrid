@@ -1,6 +1,6 @@
 import { LitElement, html } from 'lit';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { customElement, query, state } from 'lit/decorators.js';
+import { customElement, query, state, property } from 'lit/decorators.js';
 import { map } from 'lit/directives/map.js';
 import { ListTabSummariesResponse, TabSummary } from './gen/pb/api/v1/data.js';
 import { Timestamp } from './gen/google/protobuf/timestamp.js';
@@ -50,6 +50,8 @@ export class DashboardSummary extends LitElement {
   @state()
   private tabSummariesInfo: Array<TabSummaryInfo> = [];
 
+  @property({ type: String }) dashboardName: string = '';
+
   render() {
     return html`
       ${map(
@@ -57,18 +59,23 @@ export class DashboardSummary extends LitElement {
         (ts: TabSummaryInfo) => html`<tab-summary .info=${ts}></tab-summary>`
       )}
       <input id="dashboard-name-input" label="Dashboard name" />
-      <mwc-button raised @click="${this.getTabSummaries}">Fetch</mwc-button>
+      <mwc-button
+        raised
+        @click="${() => this.getTabSummaries(this.dashboardName)}"
+        >Fetch</mwc-button
+      >
     `;
   }
 
-  @query('#dashboard-name-input')
-  input!: HTMLInputElement;
+  // @query('#dashboard-name-input')
+  // input!: HTMLInputElement;
 
-  async getTabSummaries() {
+  async getTabSummaries(name: string) {
+    this.dashboardName = name;
     this.tabSummariesInfo = [];
     try {
       const response = await fetch(
-        `http://testgrid-data.k8s.io/api/v1/dashboards/${this.input.value}/tab-summaries`
+        `http://testgrid-data.k8s.io/api/v1/dashboards/${this.dashboardName}/tab-summaries`
       );
       if (!response.ok) {
         throw new Error(`HTTP error: ${response.status}`);

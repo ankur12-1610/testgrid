@@ -10,10 +10,34 @@ import {
 import '@material/mwc-button';
 import '@material/mwc-list';
 
+// dashboards template
+const dashboardTemplate = (dashboards: Array<string>) => html`
+  <div>
+    <mwc-list style="min-width: 755px">
+      ${map(
+        dashboards,
+        (dash: string, index: number) => html`
+          <mwc-list-item id=${index} class="column card dashboard">
+            <a
+              href="http://testgrid-data.k8s.io/api/v1/dashboards/${dash.replace(
+                /\W/g,
+                ''
+              )}/tabs"
+            >
+              <div class="container">
+                <p>${dash}</p>
+              </div>
+            </a>
+          </mwc-list-item>
+        `
+      )}
+    </mwc-list>
+  </div>
+`;
+
 @customElement('testgrid-index')
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export class TestgridIndex extends LitElement {
-  @state()
   @property({ type: String })
   title: string = 'My app';
 
@@ -22,65 +46,57 @@ export class TestgridIndex extends LitElement {
   @property({ type: Array<string> }) dashboardGroups: Array<string> = [];
 
   @property({ type: Array<string> }) respectiveDashboards: Array<string> = [];
-  // TODO(chases2): inject an APIClient object so we can inject it into tests/storybook later
 
-  // writing a function which renders dashboards when clicked on dashboard groups
+  @property({ type: Boolean }) show = true;
+
+  // TODO(chases2): inject an APIClient object so we can inject it into tests/storybook later
 
   render() {
     return html`
-      <mwc-button class="button" raised @click="${
-        this.callAPI
-      }">Call API</mwc-button>
+      <mwc-button raised @click="${this.callAPI}">Call API</mwc-button>
 
-    <!-- loading dashboards -->
-    <div class="flex-container">
-      <div>
-        <mwc-list class="column">
-          ${map(this.dashboards, (dash: string, index: number) => {
-            if (index !== 0) {
-              return html`
-                <mwc-list-item class="card dashboard">
-                  <div class="container">
-                    <p>${dash}</p>
-                  </div>
-                </mwc-list-item>
-              `;
-            }
-            return html`<mwc-list-item class="card dashboard">
-              <div class="container">
-                <p>${dash}</p>
-              </div>
-            </mwc-list-item>`;
-          })}
-        </mwc-list>
-      </div>
-
-      <!-- loading dashboard groups -->
-      <mwc-list class="column">
-        ${map(this.dashboardGroups, (dash: string, index: number) => {
-          if (index !== 0) {
-            return html`
-              <mwc-list-item class="card dashboard-group">
+      <div class="flex-container">
+        <!-- loading dashboard groups -->
+        <mwc-list style="min-width: 760px">
+          ${map(
+            this.dashboardGroups,
+            (dash: string, index: number) => html`
+              <mwc-list-item
+                id=${index}
+                class="column card dashboard-group"
+                raised
+                @click="${() => this.getRespectiveDashboards(dash)}"
+              >
                 <div class="container">
-                  <mwc-button raised @click="${this.getRespectiveDashboards}"
-                    >${dash}</mwc-button
-                  >
+                  <p>${dash}</p>
                 </div>
               </mwc-list-item>
-            `;
-          }
-          return html`<mwc-list-item class="card dashboard-group">
-            <div class="container">
-              <p>${dash}</p>
-            </div>
-          </mwc-list-item>`;
-        })}
-      </mwc-list>
+            `
+          )}
+        </mwc-list>
+
+        <!-- loading dashboards -->
+        ${this.show ? dashboardTemplate(this.dashboards) : ''}
+
+        <!-- loading respective dashboards -->
+        ${!this.show ? dashboardTemplate(this.respectiveDashboards) : ''}
+        ${!this.show
+          ? html`
+              <mwc-button
+                class="column"
+                raised
+                @click="${() => {
+                  this.show = !this.show;
+                }}"
+                >X</mwc-button
+              >
+            `
+          : ''}
       </div>
-    </div>
     `;
   }
 
+  // function to get dashboards
   getDashboards() {
     this.dashboards = ['Loading...'];
 
@@ -97,6 +113,7 @@ export class TestgridIndex extends LitElement {
     );
   }
 
+  // function to get dashboard groups
   getDashboardGroups() {
     this.dashboardGroups = ['Loading...'];
 
@@ -113,20 +130,23 @@ export class TestgridIndex extends LitElement {
     );
   }
 
-  async getRespectiveDashboards() {
-    this.respectiveDashboards = ['Loading...'];
+  // function to get respective dashboards of dashboard group
+  async getRespectiveDashboards(name: string) {
+    this.show = false;
+    // this.respectiveDashboards = ['Loading...'];
     try {
-      fetch(
-        'http://testgrid-data.k8s.io/api/v1/dashboard-groups/cert-manager'
-      ).then(async response => {
-        const resp = ListDashboardResponse.fromJson(await response.json());
+      fetch(`http://testgrid-data.k8s.io/api/v1/dashboard-groups/${name}`).then(
+        async response => {
+          const resp = ListDashboardResponse.fromJson(await response.json());
 
-        this.respectiveDashboards = [];
+          this.respectiveDashboards = [];
 
-        resp.dashboards.forEach(ts => {
-          this.respectiveDashboards.push(ts.name);
-        });
-      });
+          resp.dashboards.forEach(ts => {
+            this.respectiveDashboards.push(ts.name);
+          });
+          console.log(this.respectiveDashboards);
+        }
+      );
     } catch (error) {
       console.error(`Could not get dashboard summaries: ${error}`);
     }
@@ -134,17 +154,13 @@ export class TestgridIndex extends LitElement {
 
   // call both of these at same time
   callAPI() {
-    this.getDashboards();
     this.getDashboardGroups();
-    // this.getRespectiveDashboards();
+    this.getDashboards();
   }
 
   static styles = css`
-    @tailwind base;
-    @tailwind components;
-    @tailwind utilities;
-
     :host {
+      overflow: auto;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -157,41 +173,52 @@ export class TestgridIndex extends LitElement {
       background-color: var(--example-app-background-color);
     }
 
-    .button {
-      width: 200px;
-    }
-
     .flex-container {
-      display: flex;
-      flex-direction: row;
-      max-width: 500px;
+      display: grid;
+      gap: 30px;
+      grid-template-columns: auto auto auto;
     }
 
     .column {
-      flex: 50%;
+      display: inline-grid;
       padding: 10px;
     }
 
     .card {
       /* Add shadows to create the "card" effect */
-      transition: 0.3s;
+      width: 350px;
+      height: 80px;
+      /* transition: 0.3s; */
       margin-bottom: 10px;
-      box-shadow: 0 30px 30px -25px rgba(#4133b7, 0.25);
-      border-radius: 3px;
+      box-shadow: 0 30px 30px -25px rgba(#7168c9, 0.25);
     }
 
     .dashboard {
-      background-color: #ddc5fb;
+      background-color: #9e60eb;
+      color: #fff;
     }
 
     .dashboard-group {
-      background-color: #8692ff;
+      background-color: #707df1;
+      color: #fff;
     }
 
-    /* On mouse-over, add a deeper shadow */
-    .card:hover {
-      box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+    .dashboard-group:focus,
+    .dashboard-group:hover {
+      background-color: #fff;
+      color: #707df1;
+      border-style: solid;
+      border-color: #707df1;
     }
+
+    .dashboard:hover,
+    .dashboard:focus {
+      background-color: #fff;
+      color: #9e60eb;
+      border-style: solid;
+      border-color: #9e60eb;
+    }
+
     /* Add some padding inside the card container */
     .container {
       padding: 2px 16px;

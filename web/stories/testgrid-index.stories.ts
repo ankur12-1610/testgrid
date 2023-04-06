@@ -19,6 +19,24 @@ interface ArgTypes {
   backgroundColor?: string;
 }
 
+// data
+const dashboards = [
+  'cert-manager-jetstack-testing-janitors',
+  'cert-manager-periodics-master',
+  'cert-manager-periodics-release-1.10',
+  'conformance-all',
+  'conformance-apisnoop',
+  'conformance-cloud-provider-huaweicloud',
+  'gardener-ci-infra',
+  'gardener-dependency-watchdog',
+  'gardener-extension-networking-calico',
+  'google-aws',
+  'google-cel',
+  'google-gce',
+];
+
+const dashboardGroups = ['cert-manager', 'conformance', 'gardener', 'google'];
+
 const Template: Story<ArgTypes> = ({
   backgroundColor = 'white',
 }: ArgTypes) => html`
@@ -31,3 +49,21 @@ export const App = Template.bind({});
 App.args = {
   backgroundColor: '#ededed',
 };
+
+export const Dashboards: Story<ArgTypes> = ({
+  backgroundColor = 'white',
+}: ArgTypes) => html`
+  <testgrid-index
+    style="--example-app-background-color: ${backgroundColor}"
+    .dashboards=${dashboards}
+  ></testgrid-index>
+`;
+
+export const DashboardGroups: Story<ArgTypes> = ({
+  backgroundColor = 'white',
+}: ArgTypes) => html`
+  <testgrid-index
+    style="--example-app-background-color: ${backgroundColor}"
+    .dashboardGroups=${dashboardGroups}
+  ></testgrid-index>
+`;
